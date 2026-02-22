@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Portal - HealthAI Scheduler</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: #f0f4ff; font-family: 'Segoe UI', sans-serif; }
+        .sidebar {
+            background: linear-gradient(180deg, #1a73e8, #0d47a1);
+            min-height: 100vh; width: 260px;
+            position: fixed; top: 0; left: 0; color: white; padding: 30px 0;
+        }
+        .sidebar .brand { padding: 0 25px 30px; border-bottom: 1px solid rgba(255,255,255,0.2); }
+        .sidebar a {
+            display: block; padding: 14px 25px; color: rgba(255,255,255,0.85);
+            text-decoration: none; transition: all 0.2s; font-size: 0.95rem;
+        }
+        .sidebar a:hover, .sidebar a.active { background: rgba(255,255,255,0.15); color: white; padding-left: 35px; }
+        .sidebar a i { width: 24px; }
+        .main-content { margin-left: 260px; padding: 30px; }
+        .card { border: none; border-radius: 16px; box-shadow: 0 2px 15px rgba(0,0,0,0.08); }
+        .stat-card { padding: 25px; border-radius: 16px; color: white; }
+        .risk-HIGH   { background: #ffebee; color: #c62828; border-left: 4px solid #c62828; }
+        .risk-MEDIUM { background: #fff8e1; color: #e65100; border-left: 4px solid #f57c00; }
+        .risk-LOW    { background: #e8f5e9; color: #2e7d32; border-left: 4px solid #388e3c; }
+        .section { display: none; }
+        .section.active { display: block; }
+        .form-label { font-weight: 600; font-size: 0.9rem; }
+        .input-group-text { background: #e3f2fd; border-color: #bbdefb; }
+        .page-title { font-size: 1.6rem; font-weight: 700; color: #1a1a2e; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="brand">
+        <h5 class="fw-bold mb-1"><i class="fas fa-heartbeat me-2"></i>HealthAI</h5>
+        <small class="opacity-75">Patient Portal</small>
+    </div>
+    <div id="userGreeting" class="px-4 py-3 opacity-75 small" style="display:none;">
+        <i class="fas fa-user-circle me-1"></i> <span id="sidebarName"></span>
+    </div>
+    <a href="#" class="active mt-2" onclick="showSection('home')"><i class="fas fa-home me-2"></i>Home</a>
+    <a href="#" onclick="showSection('register')"><i class="fas fa-user-plus me-2"></i>Register</a>
+    <a href="#" onclick="showSection('login')"><i class="fas fa-sign-in-alt me-2"></i>Login</a>
+    <a href="#" onclick="showSection('book')"><i class="fas fa-calendar-plus me-2"></i>Book Appointment</a>
+    <a href="#" onclick="showSection('myAppointments')"><i class="fas fa-list me-2"></i>My Appointments</a>
+    <div style="position:absolute;bottom:20px;left:0;right:0;padding:0 25px;">
+        <a href="/" style="color:rgba(255,255,255,0.6);font-size:0.85rem;">
+            <i class="fas fa-arrow-left me-1"></i>Back to Home
+        </a>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+
+    <!-- HOME -->
+    <div class="section active" id="home">
+        <p class="page-title">Welcome to Patient Portal</p>
+        <p class="text-muted mb-4">Register, login, and manage your appointments with AI-powered scheduling.</p>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="stat-card" style="background:linear-gradient(135deg,#1a73e8,#0d47a1);">
+                    <i class="fas fa-robot fa-2x mb-3 opacity-75"></i>
+                    <h5 class="fw-bold">AI Scheduling</h5>
+                    <p class="opacity-75 small mb-0">Your appointment slot is assigned intelligently based on urgency and no-show prediction.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card" style="background:linear-gradient(135deg,#00bfa5,#006064);">
+                    <i class="fas fa-shield-alt fa-2x mb-3 opacity-75"></i>
+                    <h5 class="fw-bold">Risk Prediction</h5>
+                    <p class="opacity-75 small mb-0">ML model predicts no-show risk and flags reminders automatically.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card" style="background:linear-gradient(135deg,#7b1fa2,#4a148c);">
+                    <i class="fas fa-clock fa-2x mb-3 opacity-75"></i>
+                    <h5 class="fw-bold">Minimal Wait Time</h5>
+                    <p class="opacity-75 small mb-0">Optimized scheduling ensures average wait time under 10 minutes.</p>
+                </div>
+            </div>
+        </div>
+        <div class="row g-3 mt-2">
+            <div class="col-md-6">
+                <div class="card p-4 text-center">
+                    <i class="fas fa-user-plus fa-3x text-primary mb-3"></i>
+                    <h5>New Patient?</h5>
+                    <p class="text-muted">Create your account to start booking appointments.</p>
+                    <button class="btn btn-primary" onclick="showSection('register')">Register Now</button>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card p-4 text-center">
+                    <i class="fas fa-sign-in-alt fa-3x text-success mb-3"></i>
+                    <h5>Already Registered?</h5>
+                    <p class="text-muted">Login to book or view your appointments.</p>
+                    <button class="btn btn-success" onclick="showSection('login')">Login</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- REGISTER -->
+    <div class="section" id="register">
+        <p class="page-title"><i class="fas fa-user-plus me-2 text-primary"></i>Patient Registration</p>
+        <p class="text-muted mb-4">Create your account to begin using the AI scheduling system.</p>
+        <div class="card p-4" style="max-width:600px;">
+            <div id="registerMsg"></div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" class="form-control" id="reg_name" placeholder="e.g. Ravi Kumar">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Age</label>
+                    <input type="number" class="form-control" id="reg_age" placeholder="e.g. 35" min="1" max="120">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Gender</label>
+                    <select class="form-select" id="reg_gender">
+                        <option value="">Select Gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Contact Number</label>
+                    <input type="text" class="form-control" id="reg_contact" placeholder="10-digit number">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" class="form-control" id="reg_email" placeholder="your@email.com">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-control" id="reg_password" placeholder="Min. 6 characters">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Distance from Clinic (km)</label>
+                    <input type="number" class="form-control" id="reg_distance" placeholder="e.g. 8.5" step="0.1">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Previous No-Shows</label>
+                    <input type="number" class="form-control" id="reg_noshows" value="0" min="0">
+                </div>
+                <div class="col-12 mt-2">
+                    <button class="btn btn-primary w-100 py-2 fw-bold" onclick="registerPatient()">
+                        <i class="fas fa-user-plus me-2"></i>Create Account
+                    </button>
+                </div>
+                <div class="col-12 text-center">
+                    <small class="text-muted">Already have an account? <a href="#" onclick="showSection('login')">Login here</a></small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="section" id="login">
+        <p class="page-title"><i class="fas fa-sign-in-alt me-2 text-success"></i>Patient Login</p>
+        <p class="text-muted mb-4">Login to book and manage your appointments.</p>
+        <div class="card p-4" style="max-width:400px;">
+            <div id="loginMsg"></div>
+            <div class="mb-3">
+                <label class="form-label">Email Address</label>
+                <input type="email" class="form-control" id="login_email" placeholder="your@email.com">
+            </div>
+            <div class="mb-4">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-control" id="login_password" placeholder="Your password">
+            </div>
+            <button class="btn btn-success w-100 py-2 fw-bold" onclick="loginPatient()">
+                <i class="fas fa-sign-in-alt me-2"></i>Login
+            </button>
+            <p class="text-center mt-3 mb-0">
+                <small class="text-muted">No account? <a href="#" onclick="showSection('register')">Register</a></small>
+            </p>
+            <hr>
+            <p class="text-muted small text-center mb-1"><strong>Demo Credentials:</strong></p>
+            <p class="text-muted small text-center mb-0">Email: ravi@mail.com | Password: pass123</p>
+        </div>
+    </div>
+
+    <!-- BOOK APPOINTMENT -->
+    <div class="section" id="book">
+        <p class="page-title"><i class="fas fa-calendar-plus me-2 text-warning"></i>Book Appointment</p>
+        <p class="text-muted mb-4">AI will predict your no-show risk and allocate the optimal time slot.</p>
+        <div class="card p-4" style="max-width:600px;">
+            <div id="bookMsg"></div>
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="form-label">Select Doctor</label>
+                    <select class="form-select" id="book_doctor">
+                        <option value="">Loading doctors...</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Appointment Date</label>
+                    <input type="date" class="form-control" id="book_date">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Urgency Level</label>
+                    <select class="form-select" id="book_urgency">
+                        <option value="1">1 - Routine Checkup</option>
+                        <option value="2">2 - Minor Issue</option>
+                        <option value="3" selected>3 - Moderate</option>
+                        <option value="4">4 - Urgent</option>
+                        <option value="5">5 - Critical / Emergency</option>
+                    </select>
+                </div>
+                <div class="col-12 mt-2">
+                    <button class="btn btn-warning text-dark w-100 py-2 fw-bold" onclick="bookAppointment()">
+                        <i class="fas fa-calendar-check me-2"></i>Book with AI Scheduling
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Result Card -->
+        <div id="bookResult" class="card p-4 mt-4" style="max-width:600px; display:none; border-left: 5px solid #1a73e8;">
+            <h6 class="fw-bold text-primary mb-3"><i class="fas fa-check-circle me-2"></i>Appointment Confirmed</h6>
+            <div id="bookResultContent"></div>
+        </div>
+    </div>
+
+    <!-- MY APPOINTMENTS -->
+    <div class="section" id="myAppointments">
+        <p class="page-title"><i class="fas fa-list me-2 text-info"></i>My Appointments</p>
+        <p class="text-muted mb-4">View and manage all your scheduled appointments.</p>
+        <div id="appointmentsList">
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-calendar-times fa-3x mb-3 opacity-50"></i>
+                <p>Please login to view your appointments.</p>
+                <button class="btn btn-primary" onclick="showSection('login')">Login</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let currentPatientId = null;
+    let currentPatientName = null;
+
+    function showSection(name) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+        document.getElementById(name).classList.add('active');
+        if (name === 'book') loadDoctors();
+        if (name === 'myAppointments' && currentPatientId) loadAppointments();
+    }
+
+    function showAlert(containerId, message, type='success') {
+        const icon = type === 'success' ? 'check-circle' : 'exclamation-circle';
+        document.getElementById(containerId).innerHTML =
+            `<div class="alert alert-${type} d-flex align-items-center gap-2 mb-3">
+                <i class="fas fa-${icon}"></i> ${message}
+             </div>`;
+    }
+
+    async function registerPatient() {
+        const data = {
+            name: document.getElementById('reg_name').value,
+            age: document.getElementById('reg_age').value,
+            gender: document.getElementById('reg_gender').value,
+            contact: document.getElementById('reg_contact').value,
+            email: document.getElementById('reg_email').value,
+            password: document.getElementById('reg_password').value,
+            distance_km: parseFloat(document.getElementById('reg_distance').value) || 5.0,
+            previous_noshows: parseInt(document.getElementById('reg_noshows').value) || 0
+        };
+        if (!data.name || !data.age || !data.gender || !data.email || !data.password) {
+            showAlert('registerMsg', 'Please fill all required fields.', 'danger'); return;
+        }
+        const res  = await fetch('/patient/register', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+        const json = await res.json();
+        if (res.ok) {
+            showAlert('registerMsg', `Registration successful! Your Patient ID is <strong>#${json.patient_id}</strong>. Please login.`);
+        } else {
+            showAlert('registerMsg', json.error || 'Registration failed.', 'danger');
+        }
+    }
+
+    async function loginPatient() {
+        const data = {
+            email: document.getElementById('login_email').value,
+            password: document.getElementById('login_password').value
+        };
+        const res  = await fetch('/patient/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+        const json = await res.json();
+        if (res.ok) {
+            currentPatientId   = json.patient_id;
+            currentPatientName = json.name;
+            document.getElementById('userGreeting').style.display = 'block';
+            document.getElementById('sidebarName').textContent = json.name;
+            showAlert('loginMsg', `Welcome back, <strong>${json.name}</strong>! ID: #${json.patient_id}`);
+            setTimeout(() => showSection('book'), 1500);
+        } else {
+            showAlert('loginMsg', json.error || 'Login failed.', 'danger');
+        }
+    }
+
+    async function loadDoctors() {
+        const res     = await fetch('/patient/doctors');
+        const doctors = await res.json();
+        const sel     = document.getElementById('book_doctor');
+        sel.innerHTML = '<option value="">-- Select a Doctor --</option>';
+        doctors.forEach(d => {
+            sel.innerHTML += `<option value="${d.doctor_id}">${d.name} — ${d.specialty}</option>`;
+        });
+        // Set min date to today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('book_date').min = today;
+        document.getElementById('book_date').value = today;
+    }
+
+    async function bookAppointment() {
+        if (!currentPatientId) {
+            showAlert('bookMsg', 'Please login first to book an appointment.', 'warning'); return;
+        }
+        const data = {
+            patient_id      : currentPatientId,
+            doctor_id       : parseInt(document.getElementById('book_doctor').value),
+            appointment_date: document.getElementById('book_date').value,
+            urgency_level   : parseInt(document.getElementById('book_urgency').value)
+        };
+        if (!data.doctor_id || !data.appointment_date) {
+            showAlert('bookMsg', 'Please select a doctor and appointment date.', 'danger'); return;
+        }
+
+        document.querySelector('[onclick="bookAppointment()"]').innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing with AI...';
+
+        const res  = await fetch('/patient/book', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+        const json = await res.json();
+
+        document.querySelector('[onclick="bookAppointment()"]').innerHTML = '<i class="fas fa-calendar-check me-2"></i>Book with AI Scheduling';
+
+        if (res.ok) {
+            showAlert('bookMsg', 'Appointment booked successfully!');
+            const riskColors = { HIGH: 'danger', MEDIUM: 'warning', LOW: 'success' };
+            const riskClass  = riskColors[json.no_show_risk] || 'secondary';
+            document.getElementById('bookResult').style.display = 'block';
+            document.getElementById('bookResultContent').innerHTML = `
+                <div class="row g-3">
+                    <div class="col-6"><small class="text-muted">Appointment ID</small><div class="fw-bold">#${json.appointment_id}</div></div>
+                    <div class="col-6"><small class="text-muted">Doctor</small><div class="fw-bold">${json.doctor}</div></div>
+                    <div class="col-6"><small class="text-muted">Date</small><div class="fw-bold">${json.date}</div></div>
+                    <div class="col-6"><small class="text-muted">Time Slot</small><div class="fw-bold">${json.slot}</div></div>
+                    <div class="col-6"><small class="text-muted">Priority Score</small><div class="fw-bold">${json.priority_score}</div></div>
+                    <div class="col-6"><small class="text-muted">No-Show Risk</small>
+                        <div><span class="badge bg-${riskClass}">${json.no_show_risk} (${(json.no_show_probability*100).toFixed(1)}%)</span></div>
+                    </div>
+                </div>`;
+        } else {
+            showAlert('bookMsg', json.error || 'Booking failed. Please generate slots for this date first.', 'danger');
+        }
+    }
+
+    async function loadAppointments() {
+        if (!currentPatientId) return;
+        const res  = await fetch(`/patient/appointments/${currentPatientId}`);
+        const appts = await res.json();
+        const div  = document.getElementById('appointmentsList');
+        if (!appts.length) {
+            div.innerHTML = '<div class="text-center text-muted py-5"><i class="fas fa-calendar-times fa-3x mb-3 opacity-50"></i><p>No appointments found.</p></div>';
+            return;
+        }
+        const riskMap = { HIGH: 'danger', MEDIUM: 'warning', LOW: 'success' };
+        div.innerHTML = appts.map(a => `
+            <div class="card mb-3 p-3 risk-${a.risk}" style="max-width:700px;">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="fw-bold mb-1">Appointment #${a.appointment_id}</h6>
+                        <small>${a.doctor_name} &bull; ${a.date} &bull; ${a.slot_time}</small>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-${riskMap[a.risk]} mb-1">${a.risk} Risk</span><br>
+                        <span class="badge ${a.status === 'scheduled' ? 'bg-primary' : a.status === 'completed' ? 'bg-success' : 'bg-secondary'}">${a.status}</span>
+                    </div>
+                </div>
+                <div class="mt-2 d-flex gap-2 flex-wrap">
+                    <small class="text-muted">No-Show Prob: ${(a.no_show_prob*100).toFixed(1)}%</small>
+                    <small class="text-muted">&bull; Priority: ${a.priority_score}</small>
+                    <small class="text-muted">&bull; Urgency: ${a.urgency_level}/5</small>
+                </div>
+                ${a.status === 'scheduled' ? `<button class="btn btn-outline-danger btn-sm mt-2" onclick="cancelAppt(${a.appointment_id})">Cancel</button>` : ''}
+            </div>`).join('');
+    }
+
+    async function cancelAppt(id) {
+        if (!confirm('Are you sure you want to cancel this appointment?')) return;
+        const res = await fetch(`/patient/cancel/${id}`, { method:'PUT' });
+        if (res.ok) loadAppointments();
+    }
+</script>
+</body>
+</html>

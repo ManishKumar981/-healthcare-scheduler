@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - HealthAI Scheduler</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background: #f0f4ff; font-family: 'Segoe UI', sans-serif; }
+        .sidebar {
+            background: linear-gradient(180deg, #1a1a2e, #16213e);
+            min-height: 100vh; width: 260px;
+            position: fixed; top: 0; left: 0; color: white; padding: 30px 0;
+        }
+        .sidebar .brand { padding: 0 25px 25px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar a {
+            display: block; padding: 13px 25px; color: rgba(255,255,255,0.75);
+            text-decoration: none; transition: all 0.2s; font-size: 0.93rem;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            background: rgba(26,115,232,0.3); color: white;
+            border-left: 3px solid #1a73e8; padding-left: 22px;
+        }
+        .sidebar a i { width: 24px; }
+        .main-content { margin-left: 260px; padding: 30px; }
+        .card { border: none; border-radius: 16px; box-shadow: 0 2px 15px rgba(0,0,0,0.08); }
+        .stat-card { border-radius: 16px; padding: 24px; color: white; }
+        .section { display: none; }
+        .section.active { display: block; }
+        .risk-HIGH   { background: #ffebee; color: #c62828; border-left: 4px solid #c62828; }
+        .risk-MEDIUM { background: #fff8e1; color: #e65100; border-left: 4px solid #f57c00; }
+        .risk-LOW    { background: #e8f5e9; color: #2e7d32; border-left: 4px solid #388e3c; }
+        .page-title  { font-size: 1.6rem; font-weight: 700; color: #1a1a2e; }
+        .kpi-improve { background: #e8f5e9; border-radius: 12px; padding: 15px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="brand">
+        <h5 class="fw-bold mb-1"><i class="fas fa-heartbeat text-danger me-2"></i>HealthAI</h5>
+        <small class="opacity-75">Admin Dashboard</small>
+    </div>
+    <a href="#" class="active mt-2" onclick="showSection('dashboard')"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a>
+    <a href="#" onclick="showSection('doctors')"><i class="fas fa-user-md me-2"></i>Manage Doctors</a>
+    <a href="#" onclick="showSection('slots')"><i class="fas fa-clock me-2"></i>Generate Slots</a>
+    <a href="#" onclick="showSection('schedule')"><i class="fas fa-calendar-alt me-2"></i>View Schedule</a>
+    <a href="#" onclick="showSection('patients')"><i class="fas fa-users me-2"></i>All Patients</a>
+    <a href="#" onclick="showSection('simulation')"><i class="fas fa-chart-bar me-2"></i>Run Simulation</a>
+    <div style="position:absolute;bottom:20px;left:0;right:0;padding:0 25px;">
+        <a href="/" style="color:rgba(255,255,255,0.5);font-size:0.85rem;">
+            <i class="fas fa-home me-1"></i>Back to Home
+        </a>
+    </div>
+</div>
+
+<div class="main-content">
+
+    <!-- DASHBOARD -->
+    <div class="section active" id="dashboard">
+        <p class="page-title mb-1"><i class="fas fa-tachometer-alt me-2 text-primary"></i>Admin Dashboard</p>
+        <p class="text-muted mb-4">Real-time overview of clinic scheduling system.</p>
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="stat-card" style="background:linear-gradient(135deg,#1a73e8,#0d47a1);">
+                    <i class="fas fa-users fa-2x mb-3 opacity-75"></i>
+                    <h3 class="fw-bold mb-0" id="stat_patients">—</h3>
+                    <small class="opacity-75">Total Patients</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card" style="background:linear-gradient(135deg,#2e7d32,#1b5e20);">
+                    <i class="fas fa-calendar-check fa-2x mb-3 opacity-75"></i>
+                    <h3 class="fw-bold mb-0" id="stat_scheduled">—</h3>
+                    <small class="opacity-75">Scheduled Today</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card" style="background:linear-gradient(135deg,#e65100,#bf360c);">
+                    <i class="fas fa-user-times fa-2x mb-3 opacity-75"></i>
+                    <h3 class="fw-bold mb-0" id="stat_noshows">—</h3>
+                    <small class="opacity-75">No-Shows</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card" style="background:linear-gradient(135deg,#7b1fa2,#4a148c);">
+                    <i class="fas fa-user-md fa-2x mb-3 opacity-75"></i>
+                    <h3 class="fw-bold mb-0" id="stat_doctors">—</h3>
+                    <small class="opacity-75">Active Doctors</small>
+                </div>
+            </div>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card p-4">
+                    <h6 class="fw-bold mb-3"><i class="fas fa-chart-doughnut me-2 text-primary"></i>Appointment Status</h6>
+                    <canvas id="statusChart" height="200"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card p-4">
+                    <h6 class="fw-bold mb-3"><i class="fas fa-info-circle me-2 text-success"></i>Quick Actions</h6>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary" onclick="showSection('doctors')"><i class="fas fa-user-plus me-2"></i>Add New Doctor</button>
+                        <button class="btn btn-outline-success" onclick="showSection('slots')"><i class="fas fa-clock me-2"></i>Generate Time Slots</button>
+                        <button class="btn btn-outline-info" onclick="showSection('schedule')"><i class="fas fa-calendar-alt me-2"></i>View Today's Schedule</button>
+                        <button class="btn btn-outline-warning" onclick="showSection('simulation')"><i class="fas fa-chart-bar me-2"></i>Run AI Simulation</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DOCTORS -->
+    <div class="section" id="doctors">
+        <p class="page-title mb-1"><i class="fas fa-user-md me-2 text-primary"></i>Manage Doctors</p>
+        <p class="text-muted mb-4">Add new doctors and view existing ones.</p>
+        <div class="row g-4">
+            <div class="col-md-5">
+                <div class="card p-4">
+                    <h6 class="fw-bold mb-3">Add New Doctor</h6>
+                    <div id="doctorMsg"></div>
+                    <div class="mb-3">
+                        <label class="form-label">Doctor Name</label>
+                        <input type="text" class="form-control" id="doc_name" placeholder="e.g. Dr. Priya Sharma">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Specialty</label>
+                        <select class="form-select" id="doc_specialty">
+                            <option value="General Medicine">General Medicine</option>
+                            <option value="Cardiology">Cardiology</option>
+                            <option value="Dermatology">Dermatology</option>
+                            <option value="Orthopedics">Orthopedics</option>
+                            <option value="Pediatrics">Pediatrics</option>
+                            <option value="Neurology">Neurology</option>
+                            <option value="Gynecology">Gynecology</option>
+                            <option value="ENT">ENT</option>
+                            <option value="Ophthalmology">Ophthalmology</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary w-100" onclick="addDoctor()">
+                        <i class="fas fa-plus me-2"></i>Add Doctor
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-7">
+                <div class="card p-4">
+                    <h6 class="fw-bold mb-3">All Doctors</h6>
+                    <div id="doctorsList">Loading...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLOTS -->
+    <div class="section" id="slots">
+        <p class="page-title mb-1"><i class="fas fa-clock me-2 text-success"></i>Generate Time Slots</p>
+        <p class="text-muted mb-4">Auto-generate 15-minute appointment slots for a doctor on a date.</p>
+        <div class="card p-4" style="max-width:500px;">
+            <div id="slotMsg"></div>
+            <div class="mb-3">
+                <label class="form-label">Select Doctor</label>
+                <select class="form-select" id="slot_doctor"></select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Date</label>
+                <input type="date" class="form-control" id="slot_date">
+            </div>
+            <div class="row g-2 mb-3">
+                <div class="col">
+                    <label class="form-label">Start Hour</label>
+                    <select class="form-select" id="slot_start">
+                        <option value="8">8:00 AM</option>
+                        <option value="9" selected>9:00 AM</option>
+                        <option value="10">10:00 AM</option>
+                    </select>
+                </div>
+                <div class="col">
+                    <label class="form-label">End Hour</label>
+                    <select class="form-select" id="slot_end">
+                        <option value="14">2:00 PM</option>
+                        <option value="16">4:00 PM</option>
+                        <option value="17" selected>5:00 PM</option>
+                        <option value="18">6:00 PM</option>
+                    </select>
+                </div>
+            </div>
+            <div class="alert alert-info small">
+                <i class="fas fa-info-circle me-1"></i>
+                Slots are generated in 15-minute intervals. A 9 AM–5 PM shift = 32 slots.
+            </div>
+            <button class="btn btn-success w-100 fw-bold" onclick="generateSlots()">
+                <i class="fas fa-magic me-2"></i>Generate Slots
+            </button>
+        </div>
+    </div>
+
+    <!-- SCHEDULE -->
+    <div class="section" id="schedule">
+        <p class="page-title mb-1"><i class="fas fa-calendar-alt me-2 text-info"></i>Daily Schedule</p>
+        <p class="text-muted mb-4">View all appointments for a selected date with risk levels.</p>
+        <div class="card p-3 mb-4" style="max-width:400px;">
+            <div class="input-group">
+                <input type="date" class="form-control" id="sched_date">
+                <button class="btn btn-primary" onclick="loadSchedule()">
+                    <i class="fas fa-search me-1"></i>Load Schedule
+                </button>
+            </div>
+        </div>
+        <div id="scheduleList"></div>
+    </div>
+
+    <!-- PATIENTS -->
+    <div class="section" id="patients">
+        <p class="page-title mb-1"><i class="fas fa-users me-2 text-secondary"></i>All Patients</p>
+        <p class="text-muted mb-4">View all registered patients and their no-show history.</p>
+        <div class="card p-4">
+            <div id="patientsList">Loading...</div>
+        </div>
+    </div>
+
+    <!-- SIMULATION -->
+    <div class="section" id="simulation">
+        <p class="page-title mb-1"><i class="fas fa-chart-bar me-2 text-warning"></i>AI Simulation Engine</p>
+        <p class="text-muted mb-4">Compare baseline vs AI-optimized scheduling using SimPy discrete-event simulation.</p>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card p-4">
+                    <h6 class="fw-bold mb-3">Simulation Parameters</h6>
+                    <div id="simMsg"></div>
+                    <div class="mb-3">
+                        <label class="form-label">Number of Doctors</label>
+                        <input type="number" class="form-control" id="sim_doctors" value="3" min="1" max="10">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Optimized No-Show Rate (%)</label>
+                        <input type="number" class="form-control" id="sim_noshowrate" value="10" min="0" max="100">
+                        <small class="text-muted">After AI overbooking (baseline is fixed at 25%)</small>
+                    </div>
+                    <button class="btn btn-warning text-dark w-100 fw-bold" onclick="runSim()">
+                        <i class="fas fa-play me-2"></i>Run Simulation
+                    </button>
+                    <div class="alert alert-secondary mt-3 small">
+                        <strong>Simulation Duration:</strong> 480 min (8-hr day)<br>
+                        <strong>Slot Interval:</strong> 10min (baseline), 8min (optimized)<br>
+                        <strong>Avg Consultation:</strong> 15 min ± 4 min
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="card p-4" id="simResultsCard" style="display:none;">
+                    <h6 class="fw-bold mb-4"><i class="fas fa-chart-bar me-2 text-warning"></i>Simulation Results</h6>
+                    <div class="row g-3 mb-4" id="simImprovements"></div>
+                    <div class="table-responsive mb-4">
+                        <table class="table table-bordered table-sm">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Metric</th>
+                                    <th class="text-danger">Baseline (No AI)</th>
+                                    <th class="text-success">Optimized (AI)</th>
+                                    <th>Change</th>
+                                </tr>
+                            </thead>
+                            <tbody id="simTable"></tbody>
+                        </table>
+                    </div>
+                    <canvas id="simChart" height="120"></canvas>
+                </div>
+                <div class="card p-5 text-center text-muted" id="simPlaceholder">
+                    <i class="fas fa-chart-bar fa-4x mb-3 opacity-25"></i>
+                    <p>Click "Run Simulation" to compare baseline vs AI-optimized scheduling.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let statusChart = null, simChart = null;
+
+    function showSection(name) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+        document.getElementById(name).classList.add('active');
+        if (name === 'dashboard') loadStats();
+        if (name === 'doctors')   loadDoctors();
+        if (name === 'slots')     loadDoctorsForSlots();
+        if (name === 'patients')  loadPatients();
+        if (name === 'schedule') {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('sched_date').value = today;
+        }
+    }
+
+    function showAlert(containerId, message, type='success') {
+        const icon = type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'exclamation-circle';
+        document.getElementById(containerId).innerHTML =
+            `<div class="alert alert-${type} small d-flex align-items-center gap-2 mb-3">
+                <i class="fas fa-${icon}"></i> ${message}
+             </div>`;
+    }
+
+    async function loadStats() {
+        const res  = await fetch('/admin/stats');
+        const data = await res.json();
+        document.getElementById('stat_patients').textContent  = data.total_patients;
+        document.getElementById('stat_scheduled').textContent = data.scheduled;
+        document.getElementById('stat_noshows').textContent   = data.no_shows;
+        document.getElementById('stat_doctors').textContent   = data.total_doctors;
+
+        if (statusChart) statusChart.destroy();
+        const ctx = document.getElementById('statusChart').getContext('2d');
+        statusChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Scheduled', 'Completed', 'No-Show', 'Cancelled'],
+                datasets: [{
+                    data: [data.scheduled, data.completed, data.no_shows, data.cancelled],
+                    backgroundColor: ['#1a73e8','#2e7d32','#c62828','#757575'],
+                    borderWidth: 2
+                }]
+            },
+            options: { plugins: { legend: { position: 'bottom' } }, cutout: '65%' }
+        });
+    }
+
+    async function loadDoctors() {
+        const res     = await fetch('/admin/doctors');
+        const doctors = await res.json();
+        const div     = document.getElementById('doctorsList');
+        if (!doctors.length) { div.innerHTML = '<p class="text-muted">No doctors added yet.</p>'; return; }
+        div.innerHTML = `<table class="table table-sm table-hover">
+            <thead class="table-light"><tr><th>#</th><th>Name</th><th>Specialty</th><th>Status</th></tr></thead>
+            <tbody>` + doctors.map(d => `
+            <tr>
+                <td>${d.doctor_id}</td>
+                <td class="fw-bold">${d.name}</td>
+                <td><span class="badge bg-light text-dark border">${d.specialty}</span></td>
+                <td><span class="badge bg-success">Active</span></td>
+            </tr>`).join('') + `</tbody></table>`;
+    }
+
+    async function addDoctor() {
+        const data = {
+            name     : document.getElementById('doc_name').value,
+            specialty: document.getElementById('doc_specialty').value
+        };
+        if (!data.name) { showAlert('doctorMsg', 'Please enter doctor name.', 'danger'); return; }
+        const res  = await fetch('/admin/add_doctor', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+        const json = await res.json();
+        if (res.ok) { showAlert('doctorMsg', `${json.message} (ID: ${json.doctor_id})`); loadDoctors(); document.getElementById('doc_name').value=''; }
+        else         showAlert('doctorMsg', json.error || 'Failed.', 'danger');
+    }
+
+    async function loadDoctorsForSlots() {
+        const res     = await fetch('/admin/doctors');
+        const doctors = await res.json();
+        const sel     = document.getElementById('slot_doctor');
+        sel.innerHTML = doctors.map(d => `<option value="${d.doctor_id}">${d.name}</option>`).join('');
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('slot_date').value = today;
+        document.getElementById('slot_date').min   = today;
+    }
+
+    async function generateSlots() {
+        const data = {
+            doctor_id : parseInt(document.getElementById('slot_doctor').value),
+            date      : document.getElementById('slot_date').value,
+            start_hour: parseInt(document.getElementById('slot_start').value),
+            end_hour  : parseInt(document.getElementById('slot_end').value)
+        };
+        const res  = await fetch('/admin/generate_slots', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+        const json = await res.json();
+        if (res.ok) showAlert('slotMsg', json.message);
+        else         showAlert('slotMsg', json.error || 'Failed.', 'danger');
+    }
+
+    async function loadSchedule() {
+        const dateStr = document.getElementById('sched_date').value;
+        if (!dateStr) return;
+        const res   = await fetch(`/admin/schedule/${dateStr}`);
+        const appts = await res.json();
+        const div   = document.getElementById('scheduleList');
+
+        if (!appts.length) {
+            div.innerHTML = `<div class="card p-4 text-center text-muted">
+                <i class="fas fa-calendar-times fa-3x mb-3 opacity-25"></i>
+                <p>No appointments found for ${dateStr}.</p></div>`;
+            return;
+        }
+        const riskMap = {HIGH:'danger',MEDIUM:'warning',LOW:'success'};
+        div.innerHTML = appts.map(a => `
+            <div class="card mb-2 p-3 risk-${a.risk_level}">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div>
+                        <strong>#${a.appointment_id}</strong> &bull;
+                        <strong>${a.patient_name}</strong> &bull;
+                        ${a.doctor_name} &bull; ${a.time_slot}
+                    </div>
+                    <div class="d-flex gap-2 align-items-center flex-wrap">
+                        <span class="badge bg-${riskMap[a.risk_level]}">${a.risk_level} Risk (${(a.no_show_prob*100).toFixed(0)}%)</span>
+                        <span class="badge ${a.status==='scheduled'?'bg-primary':a.status==='completed'?'bg-success':'bg-secondary'}">${a.status}</span>
+                        ${a.status==='scheduled'?`
+                            <button class="btn btn-success btn-sm" onclick="markCompleted(${a.appointment_id})">✓ Done</button>
+                            <button class="btn btn-danger btn-sm" onclick="markNoShow(${a.appointment_id})">✗ No-Show</button>` : ''}
+                    </div>
+                </div>
+                <small class="text-muted mt-1 d-block">Priority: ${a.priority_score} | Urgency: ${a.urgency_level}/5</small>
+            </div>`).join('');
+    }
+
+    async function markCompleted(id) {
+        await fetch(`/admin/mark_completed/${id}`, {method:'PUT'});
+        loadSchedule();
+    }
+    async function markNoShow(id) {
+        await fetch(`/admin/mark_noshow/${id}`, {method:'PUT'});
+        loadSchedule();
+    }
+
+    async function loadPatients() {
+        const res   = await fetch('/admin/patients');
+        const pats  = await res.json();
+        const div   = document.getElementById('patientsList');
+        div.innerHTML = `<table class="table table-sm table-hover">
+            <thead class="table-dark">
+                <tr><th>#</th><th>Name</th><th>Age</th><th>Gender</th><th>Contact</th><th>No-Shows</th><th>Distance</th></tr>
+            </thead><tbody>` +
+            pats.map(p => `<tr>
+                <td>${p.patient_id}</td>
+                <td class="fw-bold">${p.name}</td>
+                <td>${p.age}</td>
+                <td>${p.gender}</td>
+                <td>${p.contact}</td>
+                <td><span class="badge ${p.previous_noshows>=3?'bg-danger':p.previous_noshows>=1?'bg-warning text-dark':'bg-success'}">${p.previous_noshows}</span></td>
+                <td>${p.distance_km} km</td>
+            </tr>`).join('') + `</tbody></table>`;
+    }
+
+    async function runSim() {
+        const btn = document.querySelector('[onclick="runSim()"]');
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Simulating...';
+        btn.disabled = true;
+
+        const data = {
+            num_doctors  : parseInt(document.getElementById('sim_doctors').value),
+            no_show_rate : parseInt(document.getElementById('sim_noshowrate').value) / 100
+        };
+        const res  = await fetch('/admin/simulate', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+        const json = await res.json();
+
+        btn.innerHTML = '<i class="fas fa-play me-2"></i>Run Simulation';
+        btn.disabled = false;
+
+        const b = json.baseline_results;
+        const o = json.optimized_results;
+        const i = json.improvement;
+
+        document.getElementById('simPlaceholder').style.display = 'none';
+        document.getElementById('simResultsCard').style.display = 'block';
+
+        document.getElementById('simImprovements').innerHTML = `
+            <div class="col-4"><div class="kpi-improve"><h5 class="text-success fw-bold mb-0">${i.wait_time_reduced_by} min</h5><small class="text-muted">Wait Time Reduced</small></div></div>
+            <div class="col-4"><div class="kpi-improve"><h5 class="text-success fw-bold mb-0">+${i.utilization_gained_pct}%</h5><small class="text-muted">Utilization Gained</small></div></div>
+            <div class="col-4"><div class="kpi-improve"><h5 class="text-success fw-bold mb-0">+${i.more_patients_seen}</h5><small class="text-muted">More Patients Seen</small></div></div>`;
+
+        const rows = [
+            ['Total Scheduled', b.total_scheduled, o.total_scheduled, '', true],
+            ['Total Seen',      b.total_seen, o.total_seen, `+${i.more_patients_seen}`, true],
+            ['No-Shows',        b.total_no_shows, o.total_no_shows, '', false],
+            ['No-Show Rate',    b.no_show_rate_pct+'%', o.no_show_rate_pct+'%', '', false],
+            ['Avg Wait (min)',  b.avg_wait_minutes, o.avg_wait_minutes, `-${i.wait_time_reduced_by} min`, false],
+            ['Utilization',     b.utilization_pct+'%', o.utilization_pct+'%', `+${i.utilization_gained_pct}%`, true],
+        ];
+        document.getElementById('simTable').innerHTML = rows.map(([label, bv, ov, change, good]) => `
+            <tr>
+                <td class="fw-bold">${label}</td>
+                <td class="text-danger">${bv}</td>
+                <td class="text-success fw-bold">${ov}</td>
+                <td>${change ? `<span class="badge ${good?'bg-success':'bg-info'}">${change}</span>` : ''}</td>
+            </tr>`).join('');
+
+        if (simChart) simChart.destroy();
+        const ctx = document.getElementById('simChart').getContext('2d');
+        simChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Avg Wait (min)', 'Utilization (%)', 'Patients Seen', 'No-Show Rate (%)'],
+                datasets: [
+                    { label: 'Baseline', data: [b.avg_wait_minutes, b.utilization_pct, b.total_seen, b.no_show_rate_pct], backgroundColor: 'rgba(198,40,40,0.7)' },
+                    { label: 'AI Optimized', data: [o.avg_wait_minutes, o.utilization_pct, o.total_seen, o.no_show_rate_pct], backgroundColor: 'rgba(46,125,50,0.7)' }
+                ]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'top' } } }
+        });
+    }
+
+    // Load dashboard on page load
+    loadStats();
+</script>
+</body>
+</html>
