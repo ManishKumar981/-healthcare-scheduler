@@ -3,6 +3,7 @@ from config import Config
 from models import init_db
 from routes.patient_routes import patient_bp
 from routes.admin_routes import admin_bp
+import os
 
 
 def create_app():
@@ -22,4 +23,5 @@ def create_app():
 
 if __name__ == '__main__':
     app = create_app()
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
